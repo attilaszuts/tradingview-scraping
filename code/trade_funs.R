@@ -1,16 +1,11 @@
-library(httr)
-library(data.table)
-library(jsonlite)
-
 # return data from request
-extractor <- function(res) {
+extractor <- function(res, data) {
   # extract data from request
   df <- fromJSON(content(res, 'text'))
   
   # get column names from request parameters 
   t <- fromJSON(data)
   t_colnames <- t$columns
-  
   
   # create dataframe from request
   findf <- 
@@ -50,7 +45,7 @@ forex_overall <- function() {
   
   res <- httr::POST(url = 'https://scanner.tradingview.com/forex/scan', httr::add_headers(.headers=headers), body = data)
   
-  forexdf <- extractor(res)
+  forexdf <- extractor(res, data)
   
   return(forexdf)
 }
@@ -78,7 +73,7 @@ forex_performance <- function() {
   
   res <- httr::POST(url = 'https://scanner.tradingview.com/forex/scan', httr::add_headers(.headers=headers), body = data)
   
-  forexdf <- extractor(res)
+  forexdf <- extractor(res, data)
   
   return(forexdf)
 }
@@ -105,7 +100,7 @@ forex_trend <- function() {
   
   res <- httr::POST(url = 'https://scanner.tradingview.com/forex/scan', httr::add_headers(.headers=headers), body = data)
   
-  forexdf <- extractor(res)
+  forexdf <- extractor(res, data)
   
   return(forexdf)
 }
@@ -135,7 +130,7 @@ stock_overall <- function() {
   
   res <- httr::POST(url = 'https://scanner.tradingview.com/america/scan', httr::add_headers(.headers=headers), body = data)
   
-  stockdf <- extractor(res)
+  stockdf <- extractor(res, data)
   
   return(stockdf)
 }
@@ -162,7 +157,7 @@ stock_performance <- function() {
   
   res <- httr::POST(url = 'https://scanner.tradingview.com/america/scan', httr::add_headers(.headers=headers), body = data)
   
-  stockdf <- extractor(res)
+  stockdf <- extractor(res, data)
   
   return(stockdf)
 }
@@ -189,7 +184,7 @@ stock_trend <- function() {
   
   res <- httr::POST(url = 'https://scanner.tradingview.com/america/scan', httr::add_headers(.headers=headers), body = data)
   
-  stockdf <- extractor(res)
+  stockdf <- extractor(res, data)
   
   return(stockdf)
 }
@@ -220,7 +215,7 @@ crypto_overall <- function() {
   
   res <- httr::POST(url = 'https://scanner.tradingview.com/crypto/scan', httr::add_headers(.headers=headers), body = data)
   
-  cryptodf <- extractor(res)
+  cryptodf <- extractor(res, data)
   
   return(cryptodf)
 }
@@ -247,7 +242,7 @@ crypto_performance <- function() {
   
   res <- httr::POST(url = 'https://scanner.tradingview.com/crypto/scan', httr::add_headers(.headers=headers), body = data)
   
-  cryptodf <- extractor(res)
+  cryptodf <- extractor(res, data)
   
   return(cryptodf)
 }
@@ -274,7 +269,10 @@ crypto_trend <- function() {
   
   res <- httr::POST(url = 'https://scanner.tradingview.com/crypto/scan', httr::add_headers(.headers=headers), body = data)
   
-  cryptodf <- extractor(res)
+  cryptodf <- extractor(res, data)
   
   return(cryptodf)
 }
+
+
+
