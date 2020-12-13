@@ -25,7 +25,10 @@ extractor <- function(res) {
   return(findf)
 }
 
-# return stats overall
+
+# forex -------------------------------------------------------------------
+
+# return stats overall (returns a df) -- Major, Minor pairs
 forex_overall <- function() {
   headers = c(
     `authority` = 'scanner.tradingview.com',
@@ -52,7 +55,7 @@ forex_overall <- function() {
   return(forexdf)
 }
 
-# return stats on performance
+# return stats on performance (returns a df) -- Major, Minor pairs
 forex_performance <- function() {
 
   headers = c(
@@ -80,7 +83,7 @@ forex_performance <- function() {
   return(forexdf)
 }
 
-# return stats on trend-following
+# return stats on trend-following (returns a df) -- Major, Minor pairs
 forex_trend <- function() {
   headers = c(
     `authority` = 'scanner.tradingview.com',
@@ -106,3 +109,8 @@ forex_trend <- function() {
   
   return(forexdf)
 }
+
+
+# stocks ------------------------------------------------------------------
+
+
