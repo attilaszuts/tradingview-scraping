@@ -8,7 +8,7 @@ library(tidyverse)
 rm(list = ls())
 
 # read in credentials
-creds <- read.delim('data/creds.txt', sep = ',')
+creds <- read.delim('D:/Projects/BA-20-21/coding-2/tradingview-scraping/data/creds.txt', sep = ',')
 key <- creds[creds$key == 'key', 2]
 webhookurl <- creds[creds$key == 'webhookurl', 2]
 ati <- creds[creds$key == 'ati', 2]
@@ -75,7 +75,7 @@ outlist <- lapply(params, scraper)
 # write out data
 for (e in 1:length(outlist)) {
   if (length(outlist[e]) > 0) {
-    write_csv(outlist[[e]], paste0('data/out/', format(Sys.time(), "%Y-%m-%e_%H-%M"), '-',  names(outlist)[e], '.csv'))
+    write_csv(outlist[[e]], paste0('D:/Projects/BA-20-21/coding-2/tradingview-scraping/data/out/', format(Sys.time(), "%Y-%m-%e_%H-%M"), '-',  names(outlist)[e], '.csv'))
   }
 }
 
@@ -139,8 +139,8 @@ oversold.plot <- bargain %>%
   coord_flip()
 
 # save plots
-overbought.filename <- paste0('out/', format(Sys.time(), "%Y-%m-%e"), '-', 'overbought.png')
-oversold.filename <- paste0('out/', format(Sys.time(), "%Y-%m-%e"), '-', 'oversold.png')
+overbought.filename <- paste0('D:/Projects/BA-20-21/coding-2/tradingview-scraping/out/', format(Sys.time(), "%Y-%m-%e"), '-', 'overbought.png')
+oversold.filename <- paste0('D:/Projects/BA-20-21/coding-2/tradingview-scraping/out/', format(Sys.time(), "%Y-%m-%e"), '-', 'oversold.png')
 ggsave(overbought.filename, overbought.plot, width = 20, height = 11.25)
 ggsave(oversold.filename, oversold.plot, width = 20, height = 11.25)
 
