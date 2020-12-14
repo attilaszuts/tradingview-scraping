@@ -3,5 +3,5 @@
 .RData
 .Ruserdata
 data/
-out/
+out/*.png
 code/main.log
