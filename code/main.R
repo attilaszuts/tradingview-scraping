@@ -3,6 +3,7 @@ library(data.table)
 library(jsonlite)
 library(janitor)
 library(knitr)
+library(tidyverse)
 
 rm(list = ls())
 
@@ -99,7 +100,7 @@ bargain[cols.num] <- sapply(bargain[cols.num],as.numeric)
 bargain$type <- as.factor(bargain$type)
 bargain$buysell <- as.factor(bargain$buysell)
 
-overbought.plot <- bargain %>% 
+overbought.plot <- bargain %>%
   filter(buysell == 'overbought') %>% 
   mutate(close = round(close, 2)) %>% 
   group_by(type) %>% 
