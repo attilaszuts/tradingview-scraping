@@ -65,8 +65,8 @@ params$stock_overbought = c("america", '{"filter":[{"left":"name","operation":"n
 params$stock_oversold = c("america", '{"filter":[{"left":"name","operation":"nempty"},{"left":"type","operation":"in_range","right":["stock","dr","fund"]},{"left":"subtype","operation":"in_range","right":["common","","etf","unit","mutual","money","reit","trust"]},{"left":"exchange","operation":"in_range","right":["NYSE","NASDAQ","AMEX"]},{"left":"RSI","operation":"less","right":30}],"options":{"active_symbols_only":true,"lang":"en"},"symbols":{"query":{"types":[]},"tickers":[]},"columns":["name","Recommend.MA","close","SMA20","SMA50","SMA200","BB.upper","BB.lower","description","type","subtype","update_mode","pricescale","minmov","fractional","minmove2"],"sort":{"sortBy":"name","sortOrder":"asc"},"range":[0,150]}')
 
 params$crypto_overall = c("crypto", '{"filter":[{"left":"name","operation":"nempty"}],"options":{"lang":"en"},"symbols":{"query":{"types":[]},"tickers":[]},"columns":["name","close","change","change_abs","bid","ask","high","low","volume","Recommend.All","exchange","description","type","subtype","update_mode","pricescale","minmov","fractional","minmove2", "Perf.W","Perf.1M","Perf.3M","Perf.6M","Perf.YTD","Perf.Y","Volatility.D", "Recommend.MA", "SMA5", "SMA10", "SMA20", "SMA30", "SMA50", "SMA100", "SMA200","BB.upper","BB.lower"],"sort":{"sortBy":"name","sortOrder":"asc"},"range":[0,10000]}')
-params$crypto_overbought = c("crypto", '{"filter":[{"left":"name","operation":"nempty"},{"left":"RSI","operation":"greater","right":70}],"options":{"active_symbols_only":true,"lang":"en"},"symbols":{"query":{"types":[]},"tickers":[]},"columns":["name","close","change","change_abs","bid","ask","high","low","volume","Recommend.All","exchange","description","type","subtype","update_mode","pricescale","minmov","fractional","minmove2"],"sort":{"sortBy":"name","sortOrder":"asc"},"range":[0,150]}')
-params$crypto_oversold = c("crypto", '{"filter":[{"left":"name","operation":"nempty"},{"left":"RSI","operation":"less","right":30}],"options":{"active_symbols_only":true,"lang":"en"},"symbols":{"query":{"types":[]},"tickers":[]},"columns":["name","close","change","change_abs","bid","ask","high","low","volume","Recommend.All","exchange","description","type","subtype","update_mode","pricescale","minmov","fractional","minmove2"],"sort":{"sortBy":"name","sortOrder":"asc"},"range":[0,150]}')
+params$crypto_overbought = c("crypto", '{"filter":[{"left":"name","operation":"nempty"},{"left":"RSI","operation":"greater","right":70}],"options":{"active_symbols_only":true,"lang":"en"},"symbols":{"query":{"types":[]},"tickers":[]},"columns":["name","close","change","change_abs","bid","ask","high","low","volume","Recommend.All","Recommend.MA","exchange","description","type","subtype","update_mode","pricescale","minmov","fractional","minmove2"],"sort":{"sortBy":"name","sortOrder":"asc"},"range":[0,150]}')
+params$crypto_oversold = c("crypto", '{"filter":[{"left":"name","operation":"nempty"},{"left":"RSI","operation":"less","right":30}],"options":{"active_symbols_only":true,"lang":"en"},"symbols":{"query":{"types":[]},"tickers":[]},"columns":["name","close","change","change_abs","bid","ask","high","low","volume","Recommend.All","Recommend.MA","exchange","description","type","subtype","update_mode","pricescale","minmov","fractional","minmove2"],"sort":{"sortBy":"name","sortOrder":"asc"},"range":[0,150]}')
 
 
 # lapply scraper function to get a list of dataframes of stocks, forex and crypto data
@@ -114,7 +114,7 @@ overbought.plot <- bargain %>%
   labs(title = 'Recommendation based on Moving Averages for overbought instruments',
        y = 'Moving Average Recommendation value', 
        x = '',
-       subtitle = 'label : close price') + 
+       subtitle = 'label : close price (rounded to 2 decimals)') + 
   scale_fill_manual(values = c('darkred')) + 
   scale_y_continuous(breaks = seq(from = -1, to = 1, by = 0.25), limits = c(0, 1)) +
   coord_flip()
@@ -133,7 +133,7 @@ oversold.plot <- bargain %>%
   labs(title = 'Recommendation based on Moving Averages for oversold instruments',
        y = 'Moving Average Recommendation value', 
        x = '',
-       subtitle = 'label : close price') + 
+       subtitle = 'label : close price (rounded to 2 decimals)') + 
   scale_fill_manual(values = c('darkgreen')) + 
   scale_y_continuous(breaks = seq(from = -1, to = 1, by = 0.25), limits = c(-1, 0)) +
   coord_flip()
