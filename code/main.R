@@ -116,27 +116,27 @@ overbought.plot <- bargain %>%
        x = '',
        subtitle = 'label : close price (rounded to 2 decimals)') + 
   scale_fill_manual(values = c('darkred')) + 
-  scale_y_continuous(breaks = seq(from = -1, to = 1, by = 0.25), limits = c(0, 1)) +
+  scale_y_continuous(breaks = seq(from = -1, to = 1, by = 0.25), limits = c(-1, 1)) +
   coord_flip()
 
-oversold.plot <- bargain %>% 
+oversold.plot <-  bargain %>%
   filter(buysell == 'oversold') %>% 
   mutate(close = round(close, 2)) %>% 
   group_by(type) %>% 
   arrange(desc(recommend_ma)) %>% 
   slice_head(n = 5) %>% 
   ggplot(aes(reorder(name,recommend_ma), recommend_ma)) + 
-  geom_bar(aes(fill = buysell), stat = "identity", show.legend = F) + 
-  geom_label(aes(label = close, hjust = 1.2)) + 
+  geom_bar(aes(fill = buysell), stat = "identity", show.legend = F) +
+  geom_label(aes(label = close, hjust = 1.2)) +
   facet_grid(type ~ ., scales = "free", space = "free") +
-  theme_bw() + 
+  theme_bw() +
   labs(title = 'Recommendation based on Moving Averages for oversold instruments',
        y = 'Moving Average Recommendation value', 
        x = '',
-       subtitle = 'label : close price (rounded to 2 decimals)') + 
-  scale_fill_manual(values = c('darkgreen')) + 
-  scale_y_continuous(breaks = seq(from = -1, to = 1, by = 0.25), limits = c(-1, 0)) +
-  coord_flip()
+       subtitle = 'label : close price (rounded to 2 decimals)') +
+  scale_fill_manual(values = c('darkgreen')) +
+  scale_y_continuous(breaks = seq(from = -1, to = 1, by = 0.25), limits = c(-1, 1)) +
+  coord_flip() 
 
 # save plots
 overbought.filename <- paste0('D:/Projects/BA-20-21/coding-2/tradingview-scraping/out/', format(Sys.time(), "%Y-%m-%e"), '-', 'overbought.png')
