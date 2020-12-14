@@ -104,7 +104,7 @@ overbought.plot <- bargain %>%
   mutate(close = round(close, 2)) %>% 
   group_by(type) %>% 
   arrange(desc(recommend_ma)) %>% 
-  slice_head(n = 10) %>% 
+  slice_head(n = 5) %>% 
   ggplot(aes(reorder(name,recommend_ma), recommend_ma)) + 
   geom_bar(aes(fill = buysell), stat = "identity", show.legend = F) + 
   geom_label(aes(label = close, hjust = -0.1)) + 
@@ -123,7 +123,7 @@ oversold.plot <- bargain %>%
   mutate(close = round(close, 2)) %>% 
   group_by(type) %>% 
   arrange(desc(recommend_ma)) %>% 
-  slice_head(n = 10) %>% 
+  slice_head(n = 5) %>% 
   ggplot(aes(reorder(name,recommend_ma), recommend_ma)) + 
   geom_bar(aes(fill = buysell), stat = "identity", show.legend = F) + 
   geom_label(aes(label = close, hjust = 1.2)) + 
