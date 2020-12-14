@@ -1,0 +1,261 @@
+---
+title: "Scraping Trading View"
+author: "Attila Szuts"
+date: "14/12/2020"
+output:
+  prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+---
+
+# Intro
+
+Ever since the first lockdown, when I started to learn python, I wanted to create an automated trading algorithm. The idea came when I was looking for projects, where I could apply my newly aquired coding skills, and that weren't completely useless (like a tinderbot that swiped right for me). So in this project I am taking another step towards completing this project, solving challenging problems and learning fungramming stuff along the way. 
+
+So what is it that I am going to show you here? Well, I am going to scrape [tradingview.com](https://www.tradingview.com/) to get back the latest forex, crypto and stock prices. I am going to save this data, create some basic plots based on Moving Averages and then upload these to imgur and finally notify my friend and I about this in a discord channel.
+
+## Tasks:
+
+
+**Steps to get data:**
+
+* Find API in chrome dev tools/network tab
+* Copy cURL (bash) and create an http request
+* Edit body parameters to get different data
+* Create function that returns a dataframe from the http request
+* Lapply that function to get a list of different data frames (forex, crypto, stock)
+
+**Extra steps to automate this script:**
+
+* Upload output plots to imgur
+  + Create application on imgur
+  + Authenticate application in postman
+  + Use key to post image to imgur
+* Send a webhook to discord that notifies users and links imgur plots
+* Schedule the script to run daily. 
+
+# The script
+
+Now, I am going to show you step-by-step how this script works. First of all, let's load the packages that are required and clear the environment
+```{r message=FALSE, warning=FALSE}
+library(httr)
+library(data.table)
+library(jsonlite)
+library(janitor)
+library(knitr)
+library(tidyverse)
+
+rm(list = ls())
+```
+
+Then, we are going to read in the credentials, that are stored in a seperate document
+```{r message=FALSE, warning=FALSE}
+# read in credentials
+creds <- read.delim('D:/Projects/BA-20-21/coding-2/tradingview-scraping/data/creds.txt', sep = ',')
+key <- creds[creds$key == 'key', 2]
+webhookurl <- creds[creds$key == 'webhookurl', 2]
+ati <- creds[creds$key == 'ati', 2]
+robi <- creds[creds$key == 'robi', 2]
+```
+
+I am going to define the scraper function next, that returns a dataframe with the result of the http request to the tradingview API
+```{r message=FALSE, warning=FALSE}
+# define scraper function, that takes request body as parameter
+scraper <- function(data) {
+  headers = c(
+    `authority` = 'scanner.tradingview.com',
+    `accept` = 'text/plain, */*; q=0.01',
+    `user-agent` = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36',
+    `content-type` = 'application/x-www-form-urlencoded; charset=UTF-8',
+    `origin` = 'https://www.tradingview.com',
+    `sec-fetch-site` = 'same-site',
+    `sec-fetch-mode` = 'cors',
+    `sec-fetch-dest` = 'empty',
+    `referer` = 'https://www.tradingview.com/',
+    `accept-language` = 'en-US,en;q=0.9,hu;q=0.8,de;q=0.7',
+    `cookie` = 'sessionid=xh32beu1f5bjcqasn7lp0oajmsr4zbpb; png=5b79a2a6-0318-4e9a-8603-dac7edbda2e4; etg=5b79a2a6-0318-4e9a-8603-dac7edbda2e4; cachec=5b79a2a6-0318-4e9a-8603-dac7edbda2e4; tv_ecuid=5b79a2a6-0318-4e9a-8603-dac7edbda2e4; _sp_ses.cf1a=*; _sp_id.cf1a=0439952b-8c16-4872-aaf1-5eabfe18173c.1607445585.8.1607873161.1607861213.f5d333ec-95a0-4bcd-a3cc-4cbf66231dec',
+    `dnt` = '1',
+    `sec-gpc` = '1'
+  )
+  
+  res <- httr::POST(url = paste0('https://scanner.tradingview.com/', data[1], '/scan'), httr::add_headers(.headers=headers), body = data[2])
+  # extract data from request
+  df <- fromJSON(content(res, 'text'))
+  
+  # get column names from request parameters 
+  t <- fromJSON(data[2])
+  t_colnames <- t$columns
+  
+  # create dataframe from request
+  findf <- 
+    rbindlist(
+      lapply(df$data$d, function(x){
+        tdf <- data.frame(t(data.frame(x)))
+        names(tdf) <- t_colnames
+        return(tdf)
+      })
+    )
+  findf <- clean_names(findf)
+  return(findf)
+}
+```
+
+
+After that, I am going to create a list of different body parameters, that will be passed as arguments to the scraper function. This way, I can lapply through this list and get back a list of dataframes of the requested data.
+```{r message=FALSE, warning=FALSE}
+# create empty list and then add request body parameters to it
+params <- list()
+
+params$forex_overall = c("forex", '{"filter":[{"left":"name","operation":"nempty"},{"left":"sector","operation":"in_range","right":["Major","Minor"]}],"options":{"lang":"en"},"symbols":{"query":{"types":["forex"]},"tickers":[]},"columns":["name","close","change","change_abs","bid","ask","high","low","Recommend.All","description","type","subtype","update_mode","pricescale","minmov","fractional","minmove2","Perf.W","Perf.1M","Perf.3M","Perf.6M","Perf.YTD","Perf.Y","Volatility.D", "Recommend.MA","SMA20","SMA50","SMA200","BB.upper","BB.lower"],"sort":{"sortBy":"name","sortOrder":"asc"},"range":[0,10000]}')
+params$forex_overbought = c("forex", '{"filter":[{"left":"name","operation":"nempty"},{"left":"sector","operation":"in_range","right":["Major","Minor"]},{"left":"RSI","operation":"greater","right":70}],"options":{"active_symbols_only":true,"lang":"en"},"symbols":{"query":{"types":["forex"]},"tickers":[]},"columns":["name","Recommend.MA","bid","ask","high","low","close","SMA20","SMA50","SMA200","BB.upper","BB.lower","description","type","subtype","update_mode","pricescale","minmov","fractional","minmove2"], "sort":{"sortBy":"name","sortOrder":"asc"},"range":[0,5000]}')
+params$forex_oversold = c("forex", '{"filter":[{"left":"name","operation":"nempty"},{"left":"sector","operation":"in_range","right":["Major","Minor"]},{"left":"RSI","operation":"less","right":30}],"options":{"active_symbols_only":true,"lang":"en"},"symbols":{"query":{"types":["forex"]},"tickers":[]},"columns":["name","Recommend.MA","bid","ask","high","low","close","SMA20","SMA50","SMA200","BB.upper","BB.lower","description","type","subtype","update_mode","pricescale","minmov","fractional","minmove2"],"sort":{"sortBy":"name","sortOrder":"asc"},"range":[0,150]}')
+
+params$stock_overall = c("america", '{"filter":[{"left":"market_cap_basic","operation":"nempty"},{"left":"type","operation":"in_range","right":["stock","dr","fund"]},{"left":"subtype","operation":"in_range","right":["common","","etf","unit","mutual","money","reit","trust"]},{"left":"exchange","operation":"in_range","right":["NYSE","NASDAQ","AMEX"]}],"options":{"lang":"en"},"symbols":{"query":{"types":[]},"tickers":[]},"columns":["name","close","change","change_abs","Recommend.All","volume","price_earnings_ttm","earnings_per_share_basic_ttm","number_of_employees","sector","description","type","subtype","update_mode","pricescale","minmov","fractional","minmove2", "change|1","change|5","change|15","change|60","change|240","Perf.W","Perf.1M","Perf.3M","Perf.6M","Perf.YTD","Perf.Y","beta_1_year","Volatility.D", "Recommend.MA","SMA5", "SMA10","SMA20", "SMA30","SMA50", "SMA100", "SMA200", "BB.upper","BB.lower"],"sort":{"sortBy":"market_cap_basic","sortOrder":"desc"},"range":[0,10000]}')
+params$stock_overbought = c("america", '{"filter":[{"left":"name","operation":"nempty"},{"left":"type","operation":"in_range","right":["stock","dr","fund"]},{"left":"subtype","operation":"in_range","right":["common","","etf","unit","mutual","money","reit","trust"]},{"left":"exchange","operation":"in_range","right":["NYSE","NASDAQ","AMEX"]},{"left":"RSI","operation":"greater","right":70}],"options":{"active_symbols_only":true,"lang":"en"},"symbols":{"query":{"types":[]},"tickers":[]},"columns":["name","Recommend.MA","close","SMA20","SMA50","SMA200","BB.upper","BB.lower","description","type","subtype","update_mode","pricescale","minmov","fractional","minmove2"],"sort":{"sortBy":"name","sortOrder":"asc"},"range":[0,150]}')
+params$stock_oversold = c("america", '{"filter":[{"left":"name","operation":"nempty"},{"left":"type","operation":"in_range","right":["stock","dr","fund"]},{"left":"subtype","operation":"in_range","right":["common","","etf","unit","mutual","money","reit","trust"]},{"left":"exchange","operation":"in_range","right":["NYSE","NASDAQ","AMEX"]},{"left":"RSI","operation":"less","right":30}],"options":{"active_symbols_only":true,"lang":"en"},"symbols":{"query":{"types":[]},"tickers":[]},"columns":["name","Recommend.MA","close","SMA20","SMA50","SMA200","BB.upper","BB.lower","description","type","subtype","update_mode","pricescale","minmov","fractional","minmove2"],"sort":{"sortBy":"name","sortOrder":"asc"},"range":[0,150]}')
+
+params$crypto_overall = c("crypto", '{"filter":[{"left":"name","operation":"nempty"}],"options":{"lang":"en"},"symbols":{"query":{"types":[]},"tickers":[]},"columns":["name","close","change","change_abs","bid","ask","high","low","volume","Recommend.All","exchange","description","type","subtype","update_mode","pricescale","minmov","fractional","minmove2", "Perf.W","Perf.1M","Perf.3M","Perf.6M","Perf.YTD","Perf.Y","Volatility.D", "Recommend.MA", "SMA5", "SMA10", "SMA20", "SMA30", "SMA50", "SMA100", "SMA200","BB.upper","BB.lower"],"sort":{"sortBy":"name","sortOrder":"asc"},"range":[0,10000]}')
+params$crypto_overbought = c("crypto", '{"filter":[{"left":"name","operation":"nempty"},{"left":"RSI","operation":"greater","right":70}],"options":{"active_symbols_only":true,"lang":"en"},"symbols":{"query":{"types":[]},"tickers":[]},"columns":["name","close","change","change_abs","bid","ask","high","low","volume","Recommend.All","Recommend.MA","exchange","description","type","subtype","update_mode","pricescale","minmov","fractional","minmove2"],"sort":{"sortBy":"name","sortOrder":"asc"},"range":[0,150]}')
+params$crypto_oversold = c("crypto", '{"filter":[{"left":"name","operation":"nempty"},{"left":"RSI","operation":"less","right":30}],"options":{"active_symbols_only":true,"lang":"en"},"symbols":{"query":{"types":[]},"tickers":[]},"columns":["name","close","change","change_abs","bid","ask","high","low","volume","Recommend.All","Recommend.MA","exchange","description","type","subtype","update_mode","pricescale","minmov","fractional","minmove2"],"sort":{"sortBy":"name","sortOrder":"asc"},"range":[0,150]}')
+
+
+# lapply scraper function to get a list of dataframes of stocks, forex and crypto data
+outlist <- lapply(params, scraper)
+```
+
+
+I will save the raw output in this step 
+```{r message=FALSE, warning=FALSE}
+# write out data
+for (e in 1:length(outlist)) {
+  if (length(outlist[e]) > 0) {
+    write_csv(outlist[[e]], paste0('D:/Projects/BA-20-21/coding-2/tradingview-scraping/data/out/', format(Sys.time(), "%Y-%m-%e_%H-%M"), '-',  names(outlist)[e], '.csv'))
+  }
+}
+```
+
+And now it is time for some data cleaning!
+```{r message=FALSE, warning=FALSE}
+# merge together overbought and oversold data on different instruments
+overbought <- rbindlist(list(outlist$forex_overbought, outlist$stock_overbought, outlist$crypto_overbought), fill = T)
+oversold <- rbindlist(list(outlist$forex_oversold, outlist$stock_oversold, outlist$crypto_oversold), fill = T)
+overbought$buysell <- rep('overbought', length(overbought$name))
+oversold$buysell <- rep('oversold', length(oversold$name))
+
+bargain <- rbind(overbought, oversold)
+
+# columns that need to be converted
+cols.num <- c("recommend_ma", "close", "sma20", "sma50", "sma200", "bb_upper", "bb_lower", "bid","ask","high","low")
+
+# convert data.table to data.frame
+bargain <- as.data.frame(bargain)
+
+# convert cols to numeric
+bargain[cols.num] <- sapply(bargain[cols.num],as.numeric)
+
+# convert type to factor
+bargain$type <- as.factor(bargain$type)
+bargain$buysell <- as.factor(bargain$buysell)
+```
+
+And some plots!
+```{r message=FALSE, warning=FALSE}
+overbought.plot <- bargain %>%
+  filter(buysell == 'overbought') %>% 
+  mutate(close = round(close, 2)) %>% 
+  group_by(type) %>% 
+  arrange(desc(recommend_ma)) %>% 
+  slice_head(n = 5) %>% 
+  ggplot(aes(reorder(name,recommend_ma), recommend_ma)) + 
+  geom_bar(aes(fill = buysell), stat = "identity", show.legend = F) + 
+  geom_label(aes(label = close, hjust = -0.1)) + 
+  facet_grid(type ~ ., scales = "free", space = "free") +
+  theme_bw() + 
+  labs(title = 'Recommendation based on Moving Averages for overbought instruments',
+       y = 'Moving Average Recommendation value', 
+       x = '',
+       subtitle = 'label : close price (rounded to 2 decimals)') + 
+  scale_fill_manual(values = c('darkred')) + 
+  scale_y_continuous(breaks = seq(from = -1, to = 1, by = 0.25), limits = c(-1, 1)) +
+  coord_flip()
+
+oversold.plot <-  bargain %>%
+  filter(buysell == 'oversold') %>% 
+  mutate(close = round(close, 2)) %>% 
+  group_by(type) %>% 
+  arrange(desc(recommend_ma)) %>% 
+  slice_head(n = 5) %>% 
+  ggplot(aes(reorder(name,recommend_ma), recommend_ma)) + 
+  geom_bar(aes(fill = buysell), stat = "identity", show.legend = F) +
+  geom_label(aes(label = close, hjust = 1.2)) +
+  facet_grid(type ~ ., scales = "free", space = "free") +
+  theme_bw() +
+  labs(title = 'Recommendation based on Moving Averages for oversold instruments',
+       y = 'Moving Average Recommendation value', 
+       x = '',
+       subtitle = 'label : close price (rounded to 2 decimals)') +
+  scale_fill_manual(values = c('darkgreen')) +
+  scale_y_continuous(breaks = seq(from = -1, to = 1, by = 0.25), limits = c(-1, 1)) +
+  coord_flip()
+```
+
+```{r echo=FALSE, fig.height=8, fig.width=13, message=FALSE, warning=FALSE}
+overbought.plot
+```
+
+```{r echo=FALSE, fig.height=8, fig.width=13, message=FALSE, warning=FALSE}
+oversold.plot
+```
+
+And for some extra steps, I wanted to learn how to use webhook since I use discord pretty often. So I saved the output plots, and then uploaded them to imgur, and saved their link.
+```{r message=FALSE, warning=FALSE}
+# save plots
+overbought.filename <- paste0('D:/Projects/BA-20-21/coding-2/tradingview-scraping/out/', format(Sys.time(), "%Y-%m-%e"), '-', 'overbought.png')
+oversold.filename <- paste0('D:/Projects/BA-20-21/coding-2/tradingview-scraping/out/', format(Sys.time(), "%Y-%m-%e"), '-', 'oversold.png')
+ggsave(overbought.filename, overbought.plot, width = 20, height = 11.25)
+ggsave(oversold.filename, oversold.plot, width = 20, height = 11.25)
+
+# upload images to imgur
+sold <- knitr::imgur_upload(oversold.filename, key = key)
+soldurl <- sold[1]
+
+bought <- knitr::imgur_upload(overbought.filename, key = key)
+boughturl <- bought[1]
+```
+
+Using these links I created another function that can send messages to a given discord channel. And I send the links of the plots, and also notifies me about this!
+```{r message=FALSE, warning=FALSE}
+# define webhook function
+send_message <- function(webhookurl, my_text) {
+  
+  headers = c(
+    `Content-type` = 'application/json'
+  )
+  data= toJSON(list("content"= my_text), auto_unbox = T)
+  res <- httr::POST(url = webhookurl, httr::add_headers(.headers=headers), body = data)
+}
+
+my_text <- paste0('hello ', ati, ' ', robi, ' here are the fresh news: ', soldurl, ' ', boughturl)
+send_message(webhookurl, my_text)
+```
+
+Finally, in another script I created a task scheduler, that created a scheduled daily task of running my main function, scraping the data and sending a message to me.
+```{r message=FALSE, warning=FALSE}
+library(taskscheduleR)
+taskscheduler_create(taskname = "demo", rscript = "D:/Projects/BA-20-21/coding-2/tradingview-scraping/code/main.R", 
+                     schedule = "DAILY", starttime = format(Sys.time(), "%H:%M"))
+
+# list active tasks
+tasks <- taskscheduler_ls()
+
+View(tasks[tasks$TaskName == 'demo',])
+
+taskscheduler_delete('demo')
+```
+
+
+# Summary
+
+All in all, this is not at all what I had in mind when I wanted to create a trading bot. However, I learned a lot during this project that I can later use to create an automated trading algorithm. For example, I learned about webhooks, how to create notifications, that I can use to send reports about my trading robot's performance. I learned how to schedule tasks, that can most definitely be used for a trading algorithm. Not to mention the most important part, actually scraping data from an API that is an essential part of all trading strategies.
+
+However, there are still a few things that I could tweak. For example, it would be much better to store data in a SQL database for example. I could integrate the R script with a MySQL server, so that I can store my data in a structured way, and later create better analysis. There is also much more data that I did not scrape, however, in order for it to be valuable information for me, I need to learn more about trading theory. And of course, I could improve the frequency of the data, since it can only download daily data. For this I would need to register on tradingview, or find another datasource.
